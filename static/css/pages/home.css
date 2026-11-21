@@ -1,15 +1,21 @@
 .home-page {
     display: flex;
     flex-direction: column;
-    min-block-size: 100dvh;
+    block-size: 100dvh;
+}
+
+.home-page > :is(.site-header, .home-footer) {
+    flex-shrink: 0;
 }
 
 .home-main {
-    flex-grow: 1;
+    flex: 1;
+    min-block-size: 0;
     inline-size: 100%;
     max-inline-size: var(--dm-content-width);
     margin-inline: auto;
-    padding: clamp(4rem, 15vh, 9rem) 1rem 3rem;
+    padding: clamp(1rem, 8dvh, 9rem) 1rem 1rem;
+    overflow: auto;
     text-align: center;
 }
 
@@ -24,7 +30,7 @@
 
 #team-search {
     max-inline-size: 44rem;
-    margin: 2.5rem auto 4rem;
+    margin: clamp(1rem, 4dvh, 2.5rem) auto 0;
     scroll-margin-block-start: 2rem;
     text-align: start;
 }
@@ -35,7 +41,7 @@
 
 @media (max-width: 48rem) {
     .home-main {
-        padding-block-start: 3rem;
+        padding-block-start: clamp(1rem, 5dvh, 3rem);
     }
 }
 
@@ -45,7 +51,7 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem 1.5rem;
-    padding: 1.5rem 1rem;
+    padding: 0.5rem 1rem;
     border-block-start: 1px solid var(--dm-border);
     background-color: var(--dm-background);
     color: var(--dm-text-muted);

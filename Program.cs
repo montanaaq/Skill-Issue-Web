@@ -32,6 +32,7 @@ internal static class Program
         var userRepository = new UserRepository(dataSource);
         var sessionRepository = new SessionRepository(dataSource);
         var authService = new AuthService(userRepository, sessionRepository);
+
         var router = new Router();
         router.MapPages();
         router.MapUserApi(authService, userRepository);
@@ -40,7 +41,6 @@ internal static class Program
         var staticFilesMiddleware = new StaticFilesMiddleware(
             Path.Combine(AppContext.BaseDirectory, "static")
         );
-
         var routingMiddleware = new RoutingMiddleware(router);
         var authenticationMiddleware = new AuthenticationMiddleware(authService);
         var csrfMiddleware = new CsrfMiddleware(new Uri(settings.Url));
