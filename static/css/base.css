@@ -83,13 +83,10 @@ label {
 
 .dither-background {
     position: fixed;
-    inset: 0;
+    inset: 0 auto auto 0;
     z-index: -1;
-    inline-size: 100%;
-    block-size: 100%;
     pointer-events: none;
     image-rendering: pixelated;
-    opacity: 0.26;
 }
 
 button,
