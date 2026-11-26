@@ -1,3 +1,5 @@
+using SkillIssue.Modules.Admin;
+using SkillIssue.Modules.Admin.Repositories;
 using SkillIssue.Modules.Teams;
 using SkillIssue.Modules.Teams.Repositories;
 using SkillIssue.Modules.Teams.Services;
@@ -26,6 +28,26 @@ internal static class RouteMappings
 
         router.Map("GET", "/profile", PagesController.ProfileAsync);
         router.Map("GET", "/my-projects", PagesController.MyProjectsAsync);
+        router.Map("GET", "/admin", PagesController.AdminAsync, UserRole.Admin);
+    }
+
+    public static void MapAdminApi(this Router router, AdminCatalogRepository repository)
+    {
+        var admin = new AdminController(repository);
+
+        router.Map("GET", "/api/admin/catalog", admin.CatalogAsync, UserRole.Admin);
+        router.Map(
+            "POST",
+            "/api/admin/catalog/skills/{id}",
+            context => admin.UpdateCatalogItemAsync(context, "skills"),
+            UserRole.Admin
+        );
+        router.Map(
+            "POST",
+            "/api/admin/catalog/position-categories/{id}",
+            context => admin.UpdateCatalogItemAsync(context, "position-categories"),
+            UserRole.Admin
+        );
     }
 
     public static void MapUserApi(

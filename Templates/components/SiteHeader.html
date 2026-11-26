@@ -1,5 +1,6 @@
 {{#param currentPath string}}
 {{#param isSignedIn bool}}
+{{#param isAdmin bool}}
 {{#param accountName string}}
 
 <header class="site-header">
@@ -13,6 +14,9 @@
         <nav class="site-nav account-nav" aria-label="Main navigation">
             {{#if isSignedIn}}
                 <a class="projects-link" href="/my-projects" aria-current='{{#if currentPath == "/my-projects"}}page{{else}}false{{/if}}'>My projects</a>
+                {{#if isAdmin}}
+                    <a href="/admin" aria-current='{{#if currentPath == "/admin"}}page{{else}}false{{/if}}'>Admin</a>
+                {{/if}}
                 <a class="account-name" href="/profile" aria-current='{{#if currentPath == "/profile"}}page{{else}}false{{/if}}'>{{accountName}}</a>
             {{else}}
                 <a href="/signin" aria-current='{{#if currentPath == "/signin"}}page{{else}}false{{/if}}'>Sign in</a>

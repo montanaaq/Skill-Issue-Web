@@ -213,7 +213,6 @@ SELECT t.id,
         WHERE p.team_id = t.id
             AND p.is_open
             AND p.deleted_at IS NULL
-            AND s.is_active
             AND c.is_active
         ORDER BY s.name::TEXT
     ),
@@ -310,7 +309,6 @@ SELECT found.id,
                             JOIN public.skills s ON s.id = r.skill_id
                             JOIN public.skill_categories sc ON sc.id = s.category_id
                         WHERE r.position_id = p.id
-                            AND s.is_active
                             AND sc.is_active
                         ORDER BY s.name
                     ),

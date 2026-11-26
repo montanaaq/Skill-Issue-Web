@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin — skill_issue</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+    <link rel="preload" href="/static/fonts/jetbrains-mono/JetBrainsMonoNerdFontMono-Regular-Web.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/static/css/fonts.css" />
+    {{#include components/ImportMap.html}}
+        <script type="module" src="/static/js/shared/accent.js"></script>
+        <link rel="stylesheet" href="/static/css/variables.css" />
+        <link rel="stylesheet" href="/static/css/base.css" />
+        <link rel="stylesheet" href="/static/css/ui.css" />
+        <link rel="stylesheet" href="/static/css/pages/admin.css" />
+        <script type="module" src="/static/js/pages/admin.js"></script>
+</head>
+
+<body>
+    <a class="skip-link" href="#content">Skip to content</a>
+    {{#include components/SiteHeader.html}}
+        <main class="page-main" id="content">
+            <h1>Catalog administration</h1>
+            <noscript>
+                <p class="alert alert-warning">Enable JavaScript to manage the catalog.</p>
+            </noscript>
+            <p data-loading hidden>Loading catalog…</p>
+            <p class="alert alert-danger" data-load-error role="alert" hidden></p>
+            <button class="btn" type="button" data-retry hidden>Try again</button>
+            <div data-catalog hidden>
+                <section>
+                    <h2>Position categories</h2>
+                    <ul class="admin-catalog" data-position-categories></ul>
+                </section>
+                <section>
+                    <h2>Skills</h2>
+                    <ul class="admin-catalog" data-skills></ul>
+                </section>
+            </div>
+            <template data-row-template>
+                <li>
+                    <div class="admin-catalog-row">
+                        <span data-status></span>
+                        <button class="btn" type="button" data-toggle></button>
+                    </div>
+                    <p class="alert alert-danger" data-error role="alert" hidden></p>
+                </li>
+            </template>
+        </main>
+</body>
+
+</html>

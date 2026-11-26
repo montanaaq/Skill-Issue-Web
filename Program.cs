@@ -5,6 +5,7 @@ using SkillIssue.Http;
 using SkillIssue.Http.Errors;
 using SkillIssue.Http.Middleware;
 using SkillIssue.Http.Routing;
+using SkillIssue.Modules.Admin.Repositories;
 using SkillIssue.Modules.Teams.Repositories;
 using SkillIssue.Modules.Teams.Services;
 using SkillIssue.Modules.Users.Repositories;
@@ -45,6 +46,7 @@ internal static class Program
 
         var router = new Router();
         router.MapPages();
+        router.MapAdminApi(new AdminCatalogRepository(dataSource));
         router.MapUserApi(authService, userRepository);
         router.MapTeamsApi(new TeamRepository(dataSource), userRepository, aiService);
 

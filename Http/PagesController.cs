@@ -1,4 +1,5 @@
 using SkillIssue.Http.Routing;
+using SkillIssue.Modules.Users.Models;
 using SkillIssue.Templates;
 
 namespace SkillIssue.Http;
@@ -30,6 +31,11 @@ public sealed class PagesController
         return WritePageWithHeaderAsync(context, "MyProjects.html");
     }
 
+    public static Task AdminAsync(RequestContext context)
+    {
+        return WritePageWithHeaderAsync(context, "Admin.html");
+    }
+
     public static Task SignUpAsync(RequestContext context)
     {
         return WritePageWithHeaderAsync(context, "SignUp.html");
@@ -42,6 +48,7 @@ public sealed class PagesController
         var headerData = new SiteHeaderData(
             CurrentPath: currentPath,
             IsSignedIn: user is not null,
+            IsAdmin: context.Role == UserRole.Admin,
             AccountName: user?.FullName ?? string.Empty
         );
 
