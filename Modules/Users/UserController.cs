@@ -2,6 +2,10 @@ using System.Net;
 using FluentValidation;
 using SkillIssue.Http;
 using SkillIssue.Http.Errors;
+using SkillIssue.Modules.Users.Models;
+using SkillIssue.Modules.Users.Repositories;
+using SkillIssue.Modules.Users.Services;
+using SkillIssue.Modules.Users.Validators;
 
 namespace SkillIssue.Modules.Users;
 

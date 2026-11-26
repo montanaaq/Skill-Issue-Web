@@ -1,4 +1,5 @@
 using SkillIssue.Modules.Users;
+using SkillIssue.Modules.Users.Services;
 
 namespace SkillIssue.Http.Middleware;
 

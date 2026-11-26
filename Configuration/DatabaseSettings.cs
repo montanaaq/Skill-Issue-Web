@@ -1,5 +1,5 @@
 using Npgsql;
-using SkillIssue.Modules.Teams;
+using SkillIssue.Modules.Teams.Models;
 
 namespace SkillIssue.Configuration;
 

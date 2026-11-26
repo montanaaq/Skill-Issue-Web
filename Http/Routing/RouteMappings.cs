@@ -1,5 +1,10 @@
 using SkillIssue.Modules.Teams;
+using SkillIssue.Modules.Teams.Repositories;
+using SkillIssue.Modules.Teams.Services;
 using SkillIssue.Modules.Users;
+using SkillIssue.Modules.Users.Models;
+using SkillIssue.Modules.Users.Repositories;
+using SkillIssue.Modules.Users.Services;
 
 namespace SkillIssue.Http.Routing;
 

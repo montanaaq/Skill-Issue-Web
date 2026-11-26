@@ -3,7 +3,11 @@ using System.Text.Json;
 using FluentValidation;
 using SkillIssue.Http;
 using SkillIssue.Http.Errors;
-using SkillIssue.Modules.Users;
+using SkillIssue.Modules.Teams.Models;
+using SkillIssue.Modules.Teams.Repositories;
+using SkillIssue.Modules.Teams.Services;
+using SkillIssue.Modules.Teams.Validators;
+using SkillIssue.Modules.Users.Repositories;
 using SkillIssue.Templates;
 
 namespace SkillIssue.Modules.Teams;

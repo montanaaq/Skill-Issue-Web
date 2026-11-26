@@ -1,9 +1,9 @@
 using System.Net;
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 using SkillIssue.Http.Errors;
 using SkillIssue.Http.Routing;
-using SkillIssue.Modules.Users;
+using SkillIssue.Modules.Users.Models;
 
 namespace SkillIssue.Http;
 
