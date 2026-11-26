@@ -11,11 +11,14 @@ export function createSkillPicker(root, skills, onChange, initialIds = [], rende
     const { signal } = controller;
     const selected = new Set(initialIds.filter((id) => byId.has(id)));
 
-    function createSkillSelect(id, labelText, value, onValueChange) {
+    function createSkillSelect(id, labelText, value, onValueChange, accessibleLabel) {
         const label = selectTemplate.content.firstElementChild.cloneNode(true);
         const select = label.querySelector("select");
         label.htmlFor = id;
         label.querySelector("span").textContent = labelText;
+        if (accessibleLabel) {
+            select.setAttribute("aria-label", accessibleLabel);
+        }
         select.id = id;
         select.name = id;
         select.value = String(value);
@@ -117,9 +120,15 @@ export function createSkillPicker(root, skills, onChange, initialIds = [], rende
             const next = (removed ? selectedList : suggestions).querySelector(
                 "button",
             );
-            (next ?? selectedList.querySelector("button") ?? input).focus({
-                preventScroll: true,
-            });
+            const target = next ?? selectedList.querySelector("button");
+            if (target) {
+                target.focus({ preventScroll: true });
+            } else {
+                const summary = input
+                    .closest("details:not([open])")
+                    ?.querySelector("summary");
+                (summary ?? input).focus();
+            }
         },
         { signal },
     );

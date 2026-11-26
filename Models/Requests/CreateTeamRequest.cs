@@ -1,5 +1,7 @@
 namespace SkillIssue.Models.Requests;
 
+public sealed record SuggestTeamRequest(string? Name, string? Description);
+
 public sealed class CreateTeamRequest
 {
     public string? Name { get; init; }

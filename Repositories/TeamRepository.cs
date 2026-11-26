@@ -11,6 +11,12 @@ public interface ITeamRepository
 {
     Task<List<MyProject>> GetMyProjectsAsync(int userId, CancellationToken cancellationToken);
     Task<TeamCatalog> GetCatalogAsync(CancellationToken cancellationToken);
+    Task<ProjectRecommendation[]> GetRecommendationsAsync(
+        int userId,
+        int? positionId,
+        int limit,
+        CancellationToken cancellationToken
+    );
     Task<List<TeamSearchResult>> SearchAsync(
         int[] skillIds,
         int beforeId,
@@ -155,6 +161,22 @@ public sealed class TeamRepository(NpgsqlDataSource dataSource) : ITeamRepositor
         );
 
         return await command.ExecuteNullableScalarAsync<int>(cancellationToken);
+    }
+
+    public async Task<ProjectRecommendation[]> GetRecommendationsAsync(
+        int userId,
+        int? positionId,
+        int limit,
+        CancellationToken cancellationToken
+    )
+    {
+        await using var command = dataSource.CreateCommand(
+            "SELECT public.get_project_recommendations($1, $2, $3)"
+        );
+        command.Parameters.AddWithValue(userId);
+        command.Parameters.AddWithValue(NpgsqlDbType.Integer, (object?)positionId ?? DBNull.Value);
+        command.Parameters.AddWithValue(limit);
+        return await command.ExecuteJsonAsync<ProjectRecommendation[]>(cancellationToken);
     }
 
     public async Task<int?> ApplyAsync(

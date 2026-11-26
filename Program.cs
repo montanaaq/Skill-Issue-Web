@@ -33,10 +33,18 @@ internal static class Program
         var sessionRepository = new SessionRepository(dataSource);
         var authService = new AuthService(userRepository, sessionRepository);
 
+        using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        var aiService = new ProjectAiService(
+            httpClient,
+            settings.LlmApiKey,
+            settings.LlmEndpoint,
+            settings.LlmModel
+        );
+
         var router = new Router();
         router.MapPages();
         router.MapUserApi(authService, userRepository);
-        router.MapTeamsApi(new TeamRepository(dataSource));
+        router.MapTeamsApi(new TeamRepository(dataSource), userRepository, aiService);
 
         var staticFilesMiddleware = new StaticFilesMiddleware(
             Path.Combine(AppContext.BaseDirectory, "static")

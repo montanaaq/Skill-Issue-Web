@@ -31,6 +31,9 @@ export function createSkillsStep(section, draft, catalog) {
             input.id = `project-skills-${index}`;
             group.querySelector("label").htmlFor = input.id;
 
+            const search = group.querySelector("details");
+            search.before(search.querySelector(".selected-skills"));
+
             skillGroups.append(group);
 
             pickers.push(
@@ -51,15 +54,17 @@ export function createSkillsStep(section, draft, catalog) {
                         return [
                             createSkillSelect(
                                 `${input.id}-${id}-level`,
-                                `Required level for ${name}`,
+                                "Required",
                                 skill.requiredLevel,
                                 (value) => { skill.requiredLevel = value; },
+                                `Required level for ${name}`,
                             ),
                             createSkillSelect(
                                 `${input.id}-${id}-importance`,
-                                `Importance for ${name}`,
+                                "Importance",
                                 skill.importance,
                                 (value) => { skill.importance = value; },
+                                `Importance for ${name}`,
                             ),
                         ];
                     },

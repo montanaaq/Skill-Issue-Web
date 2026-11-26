@@ -18,4 +18,8 @@ public static class ErrorMessages
     public const string ApplicationUnavailable = "You cannot apply for this position.";
     public const string ApplicationAlreadyResolved = "This application can no longer be processed.";
     public const string MissingDatabaseJson = "The database query did not return a JSON value.";
+    public const string ProjectAiUnavailable = "AI assistance is unavailable. Try again later.";
+    public const string LlmConfigurationInvalid = "LLM configuration is missing or invalid.";
+    public const string LlmRequestRejected = "LLM API returned HTTP {0}.";
+    public const string LlmResponseInvalid = "LLM API returned an invalid response.";
 }

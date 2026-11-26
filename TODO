@@ -1,4 +1,2 @@
-- add public and private profile (and link for public profile)
 - admin panel
-- AI integration for analyze business task to team require 
-- AI helps for search teams for your skills
+- caching for LLM requests

@@ -39,9 +39,19 @@
             <section data-project-step hidden>
                 <h3 tabindex="-1">Who will work on the project?</h3>
                 <div id="project-positions"></div>
-                <button class="btn btn-link" type="button" id="add-project-position">
-                    Add a position
+                <div class="project-actions">
+                    <button class="btn btn-link" type="button" id="add-project-position">
+                        Add a position
+                    </button>
+                    <button class="btn btn-link" type="button" id="suggest-project-team">
+                        Suggest Team (AI)
+                    </button>
+                </div>
+                <p class="field-hint" id="project-suggestion-status" role="status"></p>
+                <button class="btn btn-link" type="button" id="edit-description-for-suggestion" hidden>
+                    Edit description
                 </button>
+                <p class="alert alert-danger" id="project-suggestion-error" role="alert" hidden></p>
                 <p class="field-hint" id="project-people-count" role="status"></p>
                 <p class="alert alert-danger" id="project-people-error" role="alert" hidden></p>
             </section>
@@ -112,8 +122,11 @@
         <fieldset class="project-position">
             <legend></legend>
             <div class="skill-picker">
-                <label class="form-label" for="skill-query">Required skills</label>
-                {{#include components/SkillPicker.html}}
+                <details class="project-skill-search">
+                    <summary class="btn btn-link">Add skill</summary>
+                    <label class="form-label" for="skill-query">Find a skill</label>
+                    {{#include components/SkillPicker.html}}
+                </details>
             </div>
         </fieldset>
     </template>

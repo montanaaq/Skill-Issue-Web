@@ -7,7 +7,12 @@ namespace SkillIssue.Http.Routing;
 
 internal static class RouteMappings
 {
-    private static readonly UserRole[] _publicRoles = [UserRole.Guest, UserRole.User, UserRole.Admin];
+    private static readonly UserRole[] _publicRoles =
+    [
+        UserRole.Guest,
+        UserRole.User,
+        UserRole.Admin,
+    ];
 
     public static void MapPages(this Router router)
     {
@@ -37,13 +42,25 @@ internal static class RouteMappings
         router.Map("POST", "/api/user/social-links", users.SaveSocialLinksAsync);
     }
 
-    public static void MapTeamsApi(this Router router, ITeamRepository repository)
+    public static void MapTeamsApi(
+        this Router router,
+        ITeamRepository repository,
+        IUserRepository userRepository,
+        ProjectAiService aiService
+    )
     {
-        var teams = new TeamController(repository);
+        var teams = new TeamController(repository, userRepository, aiService);
 
         router.Map("GET", "/api/teams/catalog", teams.CatalogAsync, _publicRoles);
         router.Map("GET", "/api/teams/mine", teams.MyProjectsAsync);
         router.Map("POST", "/api/teams/search", teams.SearchProjectsAsync, _publicRoles);
+        router.Map("POST", "/api/teams/suggest", teams.SuggestAsync);
+        router.Map("GET", "/api/teams/recommendations", teams.RecommendationsAsync);
+        router.Map(
+            "POST",
+            "/api/teams/recommendations/{positionId}/explanation",
+            teams.ExplainRecommendationAsync
+        );
         router.Map("POST", "/api/teams", teams.CreateAsync);
         router.Map("POST", "/api/teams/{teamId}/applications", teams.ApplyAsync);
         router.Map(

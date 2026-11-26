@@ -43,6 +43,45 @@
     color: var(--dm-text);
 }
 
+#create-team-dialog {
+    inline-size: min(52rem, calc(100% - 2rem));
+}
+
+#project-position-skills .skill-picker {
+    container-type: inline-size;
+}
+
+#project-position-skills .selected-skills:not(:empty) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+}
+
+#project-position-skills .skill-with-fields > .skill-badge {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+#project-position-skills .skill-fields label {
+    flex: 1 1 6rem;
+}
+
+.project-skill-search > summary {
+    display: list-item;
+    inline-size: fit-content;
+    list-style-position: inside;
+    cursor: pointer;
+}
+
+.project-skill-search > .form-label {
+    margin-block-start: 0.5rem;
+}
+
+@container (inline-size >= 27rem) {
+    #project-position-skills .selected-skills:not(:empty) {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 .team-dialog::backdrop {
     background: rgb(0 0 0 / 75%);
     overflow: hidden;
@@ -99,6 +138,10 @@
 .project-actions button,
 #add-project-position {
     min-block-size: 3rem;
+}
+
+#project-suggestion-status:empty {
+    margin: 0;
 }
 
 #project-review {

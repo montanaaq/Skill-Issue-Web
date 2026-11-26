@@ -76,15 +76,18 @@ export function initCreateProject(ensureCatalog = getTeamCatalog) {
                 }
                 stepModules.push(
                     createDetailsStep(sections[0], draft),
-                    createPositionsStep(sections[1], draft, catalog),
+                    createPositionsStep(sections[1], draft, catalog, () => {
+                        steps.set(1);
+                        form.elements.description.focus();
+                    }),
                     createSkillsStep(sections[2], draft, catalog),
                     createReviewStep(sections[3], draft, catalog),
                 );
             }
 
             if (!dialog.open) {
-                dialog.showModal();
                 showStep(steps.currentStep);
+                dialog.showModal();
             }
         } catch (cause) {
             showError(
@@ -158,9 +161,4 @@ export function initCreateProject(ensureCatalog = getTeamCatalog) {
             setBusy(false);
         }
     });
-
-    if (window.location.hash === "#create-project") {
-        trigger.focus();
-        openDialog();
-    }
 }

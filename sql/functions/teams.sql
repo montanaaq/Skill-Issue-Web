@@ -5,66 +5,108 @@ CREATE OR REPLACE FUNCTION public.get_my_projects(viewer_id INTEGER) RETURNS JSO
 SELECT COALESCE(
         jsonb_agg(
             jsonb_build_object(
-                'id', t.id,
-                'name', t.name,
-                'description', t.description,
-                'role', CASE WHEN t.captain_id = viewer_id THEN 'Captain' ELSE 'Member' END,
-                'status', CASE WHEN t.closed_at IS NULL THEN 'Active' ELSE 'Closed' END,
-                'memberCount', (
+                'id',
+                t.id,
+                'name',
+                t.name,
+                'description',
+                t.description,
+                'role',
+                CASE
+                    WHEN t.captain_id = viewer_id THEN 'Captain'
+                    ELSE 'Member'
+                END,
+                'status',
+                CASE
+                    WHEN t.closed_at IS NULL THEN 'Active'
+                    ELSE 'Closed'
+                END,
+                'memberCount',
+                (
                     SELECT count(*)::INTEGER
                     FROM public.team_members m
-                    WHERE m.team_id = t.id AND m.left_at IS NULL
+                    WHERE m.team_id = t.id
+                        AND m.left_at IS NULL
                 ),
-                'positions', ARRAY(
+                'positions',
+                ARRAY(
                     SELECT mp.position_title_at_assignment
                     FROM public.team_member_positions mp
-                    WHERE mp.membership_id = membership.id AND mp.ended_at IS NULL
+                    WHERE mp.membership_id = membership.id
+                        AND mp.ended_at IS NULL
                     ORDER BY mp.id
                 ),
-                'incomingApplications', CASE WHEN t.captain_id = viewer_id THEN COALESCE(
-                    (
-                        SELECT jsonb_agg(
-                            jsonb_build_object(
-                                'id', a.id,
-                                'applicantName', u.full_name,
-                                'applicantEmail', u.email,
-                                'position', p.title,
-                                'coverLetter', a.cover_letter,
-                                'status', a.status,
-                                'resolutionReason', a.resolution_reason,
-                                'createdAt', a.created_at,
-                                'canAccept', t.closed_at IS NULL AND p.is_open AND p.deleted_at IS NULL,
-                                'match', jsonb_build_object('skills', COALESCE(
-                                    (
-                                        SELECT jsonb_agg(
-                                            jsonb_build_object(
-                                                'name', s.name,
-                                                'requiredLevel', r.required_level,
-                                                'importance', r.importance,
-                                                'candidateLevel', us.skill_level
+                'incomingApplications',
+                CASE
+                    WHEN t.captain_id = viewer_id THEN COALESCE(
+                        (
+                            SELECT jsonb_agg(
+                                    jsonb_build_object(
+                                        'id',
+                                        a.id,
+                                        'applicantName',
+                                        u.full_name,
+                                        'applicantEmail',
+                                        u.email,
+                                        'position',
+                                        p.title,
+                                        'coverLetter',
+                                        a.cover_letter,
+                                        'status',
+                                        a.status,
+                                        'resolutionReason',
+                                        a.resolution_reason,
+                                        'createdAt',
+                                        a.created_at,
+                                        'canAccept',
+                                        t.closed_at IS NULL
+                                        AND p.is_open
+                                        AND p.deleted_at IS NULL,
+                                        'match',
+                                        jsonb_build_object(
+                                            'skills',
+                                            COALESCE(
+                                                (
+                                                    SELECT jsonb_agg(
+                                                            jsonb_build_object(
+                                                                'name',
+                                                                s.name,
+                                                                'requiredLevel',
+                                                                r.required_level,
+                                                                'importance',
+                                                                r.importance,
+                                                                'candidateLevel',
+                                                                us.skill_level
+                                                            )
+                                                            ORDER BY r.importance DESC,
+                                                                s.name,
+                                                                s.id
+                                                        )
+                                                    FROM public.position_required_skills r
+                                                        JOIN public.skills s ON s.id = r.skill_id
+                                                        LEFT JOIN public.user_skills us ON us.user_id = a.applicant_id
+                                                        AND us.skill_id = r.skill_id
+                                                    WHERE r.position_id = p.id
+                                                ),
+                                                '[]'::JSONB
                                             )
-                                            ORDER BY r.importance DESC, s.name, s.id
                                         )
-                                        FROM public.position_required_skills r
-                                            JOIN public.skills s ON s.id = r.skill_id
-                                            LEFT JOIN public.user_skills us
-                                                ON us.user_id = a.applicant_id AND us.skill_id = r.skill_id
-                                        WHERE r.position_id = p.id
-                                    ),
-                                    '[]'::JSONB
-                                ))
-                            )
-                            ORDER BY (a.status = 'pending') DESC, a.created_at DESC, a.id DESC
-                        )
-                        FROM public.team_positions p
-                            JOIN public.applications a ON a.position_id = p.id
-                            JOIN public.users u ON u.id = a.applicant_id
-                        WHERE p.team_id = t.id
-                    ),
-                    '[]'::JSONB
-                ) END
+                                    )
+                                    ORDER BY (a.status = 'pending') DESC,
+                                        a.created_at DESC,
+                                        a.id DESC
+                                )
+                            FROM public.team_positions p
+                                JOIN public.applications a ON a.position_id = p.id
+                                JOIN public.users u ON u.id = a.applicant_id
+                            WHERE p.team_id = t.id
+                        ),
+                        '[]'::JSONB
+                    )
+                END
             )
-            ORDER BY t.name, t.id
+            ORDER BY t.name,
+                t.id
         ),
         '[]'::JSONB
     )
@@ -298,6 +340,134 @@ SELECT found.id,
 FROM public.search_teams(selected_skills, before_id, match_any_skill) found
     JOIN public.teams t ON t.id = found.id
 ORDER BY found.id DESC;
+$$;
+COMMIT;
+BEGIN;
+DROP FUNCTION IF EXISTS public.get_project_recommendations(INTEGER, INTEGER);
+CREATE OR REPLACE FUNCTION public.get_project_recommendations(
+        candidate_id INTEGER,
+        requested_position_id INTEGER,
+        result_limit INTEGER
+    ) RETURNS JSONB LANGUAGE sql STABLE AS $$ WITH open_positions AS (
+        SELECT p.id,
+            p.team_id,
+            p.title,
+            c.name AS category
+        FROM public.team_positions p
+            JOIN public.teams t ON t.id = p.team_id
+            JOIN public.position_categories c ON c.id = p.category_id
+        WHERE (
+                requested_position_id IS NULL
+                OR p.id = requested_position_id
+            )
+            AND p.is_open
+            AND p.deleted_at IS NULL
+            AND t.closed_at IS NULL
+            AND t.deleted_at IS NULL
+            AND t.captain_id <> candidate_id
+            AND NOT EXISTS (
+                SELECT 1
+                FROM public.team_members m
+                WHERE m.team_id = t.id
+                    AND m.user_id = candidate_id
+                    AND m.left_at IS NULL
+            )
+            AND NOT EXISTS (
+                SELECT 1
+                FROM public.applications a
+                    JOIN public.team_positions applied ON applied.id = a.position_id
+                WHERE applied.team_id = t.id
+                    AND a.applicant_id = candidate_id
+                    AND a.status = 'pending'
+            )
+    ),
+    position_matches AS (
+        SELECT p.id,
+            p.team_id,
+            p.title,
+            p.category,
+            100 * sum(
+                LEAST(COALESCE(us.skill_level, 0), r.required_level)::NUMERIC / r.required_level * r.importance
+            ) / sum(r.importance) AS percent,
+            jsonb_agg(
+                jsonb_build_object(
+                    'name',
+                    s.name,
+                    'requiredLevel',
+                    r.required_level,
+                    'importance',
+                    r.importance,
+                    'candidateLevel',
+                    us.skill_level
+                )
+                ORDER BY s.name,
+                    s.id
+            ) AS skills
+        FROM open_positions p
+            JOIN public.position_required_skills r ON r.position_id = p.id
+            JOIN public.skills s ON s.id = r.skill_id
+            AND s.is_active
+            JOIN public.skill_categories c ON c.id = s.category_id
+            AND c.is_active
+            LEFT JOIN public.user_skills us ON us.skill_id = s.id
+            AND us.user_id = candidate_id
+        GROUP BY p.id,
+            p.team_id,
+            p.title,
+            p.category
+        HAVING count(us.skill_id) > 0
+    ),
+    best_positions AS (
+        SELECT DISTINCT ON (team_id) id,
+            team_id,
+            title,
+            category,
+            percent,
+            skills
+        FROM position_matches
+        ORDER BY team_id,
+            percent DESC,
+            id
+    ),
+    top_matches AS (
+        SELECT id,
+            team_id,
+            title,
+            category,
+            percent,
+            skills
+        FROM best_positions
+        ORDER BY percent DESC,
+            team_id DESC
+        LIMIT result_limit
+    )
+SELECT COALESCE(
+        jsonb_agg(
+            jsonb_build_object(
+                'teamId',
+                t.id,
+                'teamName',
+                t.name,
+                'description',
+                t.description,
+                'positionId',
+                m.id,
+                'positionTitle',
+                m.title,
+                'positionCategory',
+                m.category,
+                'percent',
+                round(m.percent, 2),
+                'skills',
+                m.skills
+            )
+            ORDER BY m.percent DESC,
+                t.id DESC
+        ),
+        '[]'::JSONB
+    )
+FROM top_matches m
+    JOIN public.teams t ON t.id = m.team_id;
 $$;
 COMMIT;
 CREATE OR REPLACE FUNCTION public.create_team(

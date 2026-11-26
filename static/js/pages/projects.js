@@ -1,6 +1,12 @@
 import { getProfile } from "../api/auth-api.js";
-import { getTeamCatalog, searchProjects } from "../api/teams-api.js";
+import {
+    explainProjectMatch,
+    getProjectRecommendations,
+    getTeamCatalog,
+    searchProjects,
+} from "../api/teams-api.js";
 import { errorMessages } from "@shared/constants/error-messages.js";
+import { createLink, textElement } from "@shared/dom.js";
 import {
     loadProjectSkillFilters,
     saveProjectSkillFilters,
@@ -20,10 +26,14 @@ const error = document.getElementById("projects-error");
 const pages = document.getElementById("project-pages");
 const firstPage = document.getElementById("first-project-page");
 const nextPage = document.getElementById("next-project-page");
+const findMatches = document.getElementById("find-project-matches");
+const backToSearch = document.getElementById("back-to-project-search");
+const matchTemplate = document.getElementById("project-match-template");
 let appliedSkills = [];
 let currentBefore = null;
 let nextBefore = null;
 let requestVersion = 0;
+let showingMatches = false;
 let picker;
 let catalogRequest;
 
@@ -36,34 +46,75 @@ function ensureCatalog() {
 }
 
 async function loadProjects(skillIds, before = null, focusHeading = false) {
+    const loadMatches = skillIds === null;
     const version = ++requestVersion;
     clearError(error);
     firstPage.disabled = true;
     nextPage.disabled = true;
+    if (loadMatches) {
+        findMatches.setAttribute("aria-disabled", "true");
+    } else {
+        findMatches?.removeAttribute("aria-disabled");
+    }
     status.classList.remove("visually-hidden");
-    status.textContent = "Loading projects…";
+    status.textContent = loadMatches
+        ? "Finding team matches…"
+        : "Loading projects…";
 
     try {
-        const data = await searchProjects(skillIds, before);
+        const data = await (loadMatches
+            ? getProjectRecommendations()
+            : searchProjects(skillIds, before));
         if (version !== requestVersion) {
             return;
         }
 
-        results.innerHTML = data.html;
-        for (const button of results.querySelectorAll("[data-apply-team]")) {
-            button.hidden = false;
+        showingMatches = loadMatches;
+        heading.textContent = loadMatches
+            ? "Top teams for you"
+            : "Projects looking for people";
+        if (findMatches) {
+            findMatches.hidden = loadMatches;
+            backToSearch.hidden = !loadMatches;
         }
-        appliedSkills = skillIds;
-        currentBefore = before;
-        nextBefore = data.nextBefore;
-        firstPage.hidden = before === null;
-        nextPage.hidden = nextBefore === null;
-        pages.hidden = firstPage.hidden && nextPage.hidden;
+
+        if (loadMatches) {
+            results.replaceChildren(...data.projects.map(renderMatch));
+            if (!data.hasSkills) {
+                results.append(createLink("Edit profile", "/profile"));
+            }
+            pages.hidden = true;
+        } else {
+            results.innerHTML = data.html;
+            for (const button of results.querySelectorAll(
+                "[data-apply-team]",
+            )) {
+                button.hidden = false;
+            }
+            appliedSkills = skillIds;
+            currentBefore = before;
+            nextBefore = data.nextBefore;
+            firstPage.hidden = before === null;
+            nextPage.hidden = nextBefore === null;
+            pages.hidden = firstPage.hidden && nextPage.hidden;
+        }
+
         const count = results.querySelectorAll("article").length;
-        status.classList.toggle("visually-hidden", count === 0);
-        status.textContent = count
-            ? `Projects on this page: ${count}.`
-            : "No projects found.";
+        status.classList.toggle("visually-hidden", !loadMatches && count === 0);
+        if (loadMatches) {
+            if (!data.hasSkills) {
+                status.textContent =
+                    "Add skills to your profile to find matching teams.";
+            } else {
+                status.textContent = count
+                    ? `Matching projects: ${count}.`
+                    : "No open positions match your skills yet.";
+            }
+        } else {
+            status.textContent = count
+                ? `Projects on this page: ${count}.`
+                : "No projects found.";
+        }
         if (focusHeading) {
             heading.focus();
         }
@@ -76,7 +127,86 @@ async function loadProjects(skillIds, before = null, focusHeading = false) {
         if (version === requestVersion) {
             firstPage.disabled = false;
             nextPage.disabled = false;
+            findMatches?.removeAttribute("aria-disabled");
         }
+    }
+}
+
+function renderMatch(project) {
+    const card = matchTemplate.content.firstElementChild.cloneNode(true);
+    const title = card.querySelector("h3");
+    title.id = `team-heading-${project.teamId}`;
+    title.textContent = project.teamName;
+    card.querySelector(".team-description").textContent = project.description;
+    const position = card.querySelector("[data-match-position]");
+    position.id = `match-position-${project.positionId}`;
+    position.textContent = project.positionTitle;
+    card.querySelector("[data-match-score]").textContent =
+        `${project.percent}% match`;
+
+    const skills = card.querySelector("table");
+    skills.setAttribute("aria-labelledby", position.id);
+    const body = skills.tBodies[0];
+    for (const { name, candidateLevel, requiredLevel } of project.skills) {
+        const row = body.insertRow();
+        const skill = textElement("th", name);
+        skill.scope = "row";
+        const status =
+            candidateLevel === null
+                ? "Missing"
+                : candidateLevel >= requiredLevel
+                  ? "Meets requirement"
+                  : "Below required level";
+        skill.append(textElement("small", status, "project-skill-status"));
+        row.append(
+            skill,
+            textElement(
+                "td",
+                candidateLevel === null ? "—" : `${candidateLevel}/3`,
+            ),
+            textElement("td", `${requiredLevel}/3`),
+        );
+    }
+
+    const apply = card.querySelector("[data-apply-team]");
+    apply.setAttribute("aria-describedby", title.id);
+    apply.dataset.applyTeam = project.teamId;
+    apply.dataset.positions = JSON.stringify([
+        {
+            id: project.positionId,
+            title: project.positionTitle,
+            category: project.positionCategory,
+            skills: project.skills.map((skill) => skill.name),
+        },
+    ]);
+    const explain = card.querySelector("[data-explain-match]");
+    explain.setAttribute("aria-describedby", title.id);
+    explain.dataset.explainMatch = project.positionId;
+
+    return card;
+}
+
+async function explainMatch(button) {
+    if (button.getAttribute("aria-disabled") === "true") {
+        return;
+    }
+
+    const explanation = button
+        .closest("article")
+        .querySelector("[data-match-explanation]");
+    button.setAttribute("aria-disabled", "true");
+    button.textContent = "Explaining…";
+    explanation.textContent = "";
+
+    try {
+        explanation.textContent = await explainProjectMatch(
+            Number(button.dataset.explainMatch),
+        );
+        button.textContent = "Match explained";
+    } catch (cause) {
+        explanation.textContent = cause.message || errorMessages.requestFailed;
+        button.textContent = "Explain match (AI)";
+        button.removeAttribute("aria-disabled");
     }
 }
 
@@ -106,6 +236,9 @@ async function initFilters() {
             savedIds ?? profile?.skillIds ?? [],
         );
         fields.disabled = false;
+        if (findMatches) {
+            findMatches.hidden = false;
+        }
         await loadProjects(picker.ids);
     } catch (cause) {
         status.textContent = "";
@@ -134,8 +267,22 @@ firstPage.addEventListener("click", () =>
 nextPage.addEventListener("click", () =>
     loadProjects(appliedSkills, nextBefore, true),
 );
+findMatches?.addEventListener("click", () => {
+    if (findMatches.getAttribute("aria-disabled") !== "true") {
+        loadProjects(null, null, true);
+    }
+});
+backToSearch?.addEventListener("click", () =>
+    loadProjects(appliedSkills, null, true),
+);
 
 results.addEventListener("click", (event) => {
+    const explain = event.target.closest("[data-explain-match]");
+    if (explain) {
+        explainMatch(explain);
+        return;
+    }
+
     const button = event.target.closest("[data-apply-team]");
     if (!button) {
         return;
@@ -150,7 +297,11 @@ results.addEventListener("click", (event) => {
         applicationPositions: JSON.parse(button.dataset.positions),
     };
     openApplicationDialog(team, button, () =>
-        loadProjects(appliedSkills, currentBefore, true),
+        loadProjects(
+            showingMatches ? null : appliedSkills,
+            currentBefore,
+            true,
+        ),
     );
 });
 

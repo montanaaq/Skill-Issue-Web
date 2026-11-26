@@ -36,7 +36,6 @@
                         <h2 id="project-filters-heading">Filter projects</h2>
                         <form id="project-filters" action="/projects" method="get" aria-labelledby="project-filters-heading">
                             <fieldset aria-describedby="project-filter-hint" disabled>
-                                <legend>Skills</legend>
                                 <div class="skill-picker" id="project-skill-picker">
                                     <label class="mb-2" for="skill-query">Find a skill</label>
                                     {{#include components/SkillPicker.html}}
@@ -52,6 +51,16 @@
                             </fieldset>
                         </form>
                     </search>
+                    {{#if isSignedIn}}
+                        <div class="search-actions">
+                            <button class="btn btn-link" type="button" id="find-project-matches" hidden>
+                                Find Teams for me
+                            </button>
+                            <button class="btn btn-link" type="button" id="back-to-project-search" hidden>
+                                Back to search
+                            </button>
+                        </div>
+                    {{/if}}
                 </div>
                 <section class="team-results" aria-labelledby="teams-heading">
                     <h2 id="teams-heading" tabindex="-1">
@@ -78,6 +87,37 @@
         </main>
         {{#include components/ApplicationDialog.html}}
             {{#include components/CreateProjectDialog.html}}
+                <template id="project-match-template">
+                    <article class="team-row">
+                        <h3></h3>
+                        <p class="team-description"></p>
+                        <div class="project-match-details">
+                            <p class="project-match-summary">
+                                <span data-match-position></span>
+                                <strong class="project-match-score" data-match-score></strong>
+                            </p>
+                            <table class="project-match-skills">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Skill</th>
+                                        <th scope="col">Your level</th>
+                                        <th scope="col">Required</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                        <div class="search-actions">
+                            <button class="btn btn-primary" type="button" aria-haspopup="dialog" data-apply-team>
+                                Apply to join
+                            </button>
+                            <button class="btn btn-link" type="button" data-explain-match>
+                                Explain match (AI)
+                            </button>
+                        </div>
+                        <p class="team-meta" data-match-explanation role="status"></p>
+                    </article>
+                </template>
 </body>
 
 </html>

@@ -10,6 +10,9 @@ public sealed class AppSettings(string url, string databaseConnectionString)
 
     public string Url { get; } = url;
     public string DatabaseConnectionString { get; } = databaseConnectionString;
+    public string? LlmApiKey { get; private init; }
+    public string? LlmEndpoint { get; private init; }
+    public string? LlmModel { get; private init; }
 
     public static AppSettings FromEnvironment()
     {
@@ -44,7 +47,12 @@ public sealed class AppSettings(string url, string databaseConnectionString)
             Password = GetRequiredVariable("POSTGRES_PASSWORD"),
         };
 
-        return new AppSettings(url.AbsoluteUri, connectionString.ConnectionString);
+        return new AppSettings(url.AbsoluteUri, connectionString.ConnectionString)
+        {
+            LlmApiKey = Environment.GetEnvironmentVariable("LLM_API_KEY")?.Trim(),
+            LlmEndpoint = Environment.GetEnvironmentVariable("LLM_ENDPOINT")?.Trim(),
+            LlmModel = Environment.GetEnvironmentVariable("LLM_MODEL")?.Trim(),
+        };
     }
 
     private static string GetRequiredVariable(string name)

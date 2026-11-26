@@ -45,4 +45,10 @@ public sealed record ApiError(HttpStatusCode StatusCode, string Code, string Mes
         "internal_server_error",
         "Something went wrong. Try again."
     );
+
+    public static readonly ApiError ProjectAiUnavailable = new(
+        HttpStatusCode.ServiceUnavailable,
+        "project_ai_unavailable",
+        ErrorMessages.ProjectAiUnavailable
+    );
 }
