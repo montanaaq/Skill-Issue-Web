@@ -1,7 +1,5 @@
 using Npgsql;
-using SkillIssue.Models.Applications;
-using SkillIssue.Models.Invitations;
-using SkillIssue.Models.Teams;
+using SkillIssue.Modules.Teams;
 
 namespace SkillIssue.Configuration;
 

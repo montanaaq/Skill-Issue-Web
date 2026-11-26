@@ -1,8 +1,0 @@
-namespace SkillIssue.Models.Requests;
-
-public sealed class CreateApplicationRequest
-{
-    internal int TeamId { get; set; }
-    public int PositionId { get; init; }
-    public string? CoverLetter { get; init; }
-}

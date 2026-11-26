@@ -1,6 +1,6 @@
 using SkillIssue.Http.Errors;
 using SkillIssue.Http.Routing;
-using SkillIssue.Models.Users;
+using SkillIssue.Modules.Users;
 
 namespace SkillIssue.Http.Middleware;
 

@@ -1,4 +1,4 @@
-using SkillIssue.Models.Users;
+using SkillIssue.Modules.Users;
 
 namespace SkillIssue.Http.Routing;
 

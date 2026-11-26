@@ -5,8 +5,8 @@ using SkillIssue.Http;
 using SkillIssue.Http.Errors;
 using SkillIssue.Http.Middleware;
 using SkillIssue.Http.Routing;
-using SkillIssue.Repositories;
-using SkillIssue.Services;
+using SkillIssue.Modules.Teams;
+using SkillIssue.Modules.Users;
 
 namespace SkillIssue;
 
@@ -34,7 +34,7 @@ internal static class Program
         var authService = new AuthService(userRepository, sessionRepository);
 
         using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
-        var aiService = new ProjectAiService(
+        var aiService = new TeamAiService(
             httpClient,
             settings.LlmApiKey,
             settings.LlmEndpoint,

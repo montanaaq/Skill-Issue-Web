@@ -1,5 +1,5 @@
 using SkillIssue.Http.Errors;
-using SkillIssue.Models.Users;
+using SkillIssue.Modules.Users;
 
 namespace SkillIssue.Http.Routing;
 

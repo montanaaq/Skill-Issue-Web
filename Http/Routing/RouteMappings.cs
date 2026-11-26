@@ -1,7 +1,5 @@
-using SkillIssue.Controllers;
-using SkillIssue.Models.Users;
-using SkillIssue.Repositories;
-using SkillIssue.Services;
+using SkillIssue.Modules.Teams;
+using SkillIssue.Modules.Users;
 
 namespace SkillIssue.Http.Routing;
 
@@ -46,7 +44,7 @@ internal static class RouteMappings
         this Router router,
         ITeamRepository repository,
         IUserRepository userRepository,
-        ProjectAiService aiService
+        TeamAiService aiService
     )
     {
         var teams = new TeamController(repository, userRepository, aiService);
