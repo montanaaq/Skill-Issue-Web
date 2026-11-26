@@ -9,9 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Update="Views/**/*;static/**/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="Templates/**/*.html;static/**/*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Compile Remove="Templates/Generator/**/*.cs;$(CompilerGeneratedFilesOutputPath)/**/*.cs" />
-    <AdditionalFiles Include="Views/**/*.html" />
+    <AdditionalFiles Include="Templates/**/*.html" />
     <ProjectReference Include="Templates/Generator/TemplateGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 

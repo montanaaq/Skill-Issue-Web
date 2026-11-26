@@ -50,7 +50,7 @@ internal sealed class TemplateEngine
             throw new InvalidOperationException($"Circular include: {fileName}");
         }
 
-        string filePath = Path.Combine(AppContext.BaseDirectory, "Views", fileName);
+        string filePath = Path.Combine(AppContext.BaseDirectory, "Templates", fileName);
         string template = await File.ReadAllTextAsync(filePath, render.CancellationToken);
         var tags = TemplateSyntax.ReadTags(template, render.CancellationToken);
         await RenderBlockAsync(fileName, template, tags, render, 0, true);
