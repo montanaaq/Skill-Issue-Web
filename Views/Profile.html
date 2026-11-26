@@ -53,6 +53,21 @@
                     <a href="#settings" data-section-link="settings">Settings</a>
                 </nav>
                 <div id="overview" data-section="overview">
+                    <section class="profile-section settings-section" aria-labelledby="skills-heading">
+                        <h2 id="skills-heading">Skills</h2>
+                        <form data-skills-form aria-labelledby="skills-heading" action="/api/user/skills" method="post">
+                            <fieldset data-skills-fields>
+                                <div class="skill-picker" data-profile-skill-picker>
+                                    <label class="form-label" for="skill-query">Find skills</label>
+                                    {{#include components/SkillPicker.html}}
+                                </div>
+                                <button class="btn btn-primary" type="submit">Save skills</button>
+                                <button class="btn" type="button" data-cancel-skills>Cancel</button>
+                            </fieldset>
+                            <p class="form-text mt-3" data-skills-status role="status"></p>
+                            <p class="alert alert-danger" data-skills-error role="alert" hidden></p>
+                        </form>
+                    </section>
                     <section class="profile-section" aria-labelledby="applications-heading">
                         <div class="section-heading">
                             <h2 id="applications-heading">
@@ -64,20 +79,6 @@
                     </section>
                 </div>
                 <div id="settings" data-section="settings" hidden>
-                    <section class="profile-section settings-section" aria-labelledby="skills-heading">
-                        <h2 id="skills-heading">Skills</h2>
-                        <form data-skills-form aria-labelledby="skills-heading">
-                            <fieldset data-skills-fields>
-                                <div class="skill-picker" data-profile-skill-picker>
-                                    <label class="form-label" for="skill-query">Find skills</label>
-                                    {{#include components/SkillPicker.html}}
-                                </div>
-                                <button class="btn btn-primary" type="submit">Save skills</button>
-                            </fieldset>
-                            <p class="form-text mt-3" data-skills-status role="status"></p>
-                            <p class="alert alert-danger" data-skills-error role="alert" hidden></p>
-                        </form>
-                    </section>
                     <section class="profile-section settings-section" aria-labelledby="links-heading">
                         <h2 id="links-heading">Social links</h2>
                         <form data-social-form>

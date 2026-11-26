@@ -37,9 +37,9 @@ export function createReviewStep(section, draft, catalog) {
                 !position.includeCaptain;
 
             const skills = item.querySelector("[data-review-skills]");
-            for (const id of position.skillIds) {
+            for (const { skillId, requiredLevel, importance } of position.skills) {
                 const skill = document.createElement("li");
-                skill.textContent = skillNames.get(id);
+                skill.textContent = `${skillNames.get(skillId)} · Level ${requiredLevel}/3 · Importance ${importance}/3`;
                 skills.append(skill);
             }
 

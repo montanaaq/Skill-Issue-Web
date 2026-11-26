@@ -58,3 +58,17 @@
     border-color: var(--dm-accent);
     color: var(--dm-accent);
 }
+
+.skill-with-fields {
+    display: grid;
+    align-content: start;
+    gap: 0.5rem;
+    border: 1px solid var(--dm-input-border);
+    padding: 0.5rem;
+}
+
+.skill-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}

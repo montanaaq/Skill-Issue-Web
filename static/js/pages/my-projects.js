@@ -1,5 +1,4 @@
-import { getProfile } from "../api/auth-api.js";
-import { resolveTeamApplication } from "../api/teams-api.js";
+import { getMyProjects, resolveTeamApplication } from "../api/teams-api.js";
 import { $, textElement } from "@shared/dom.js";
 import { APPLICATION_STATUSES } from "@shared/constants/applications.js";
 import { clearError, showError } from "@shared/ui.js";
@@ -10,6 +9,31 @@ const loading = $("loading");
 const error = $("project-error");
 const status = $("project-status");
 const retry = $("retry");
+
+function renderSkillMatch({ percent, skills }) {
+    if (percent === null) {
+        return textElement("p", "No skill requirements", "profile-meta");
+    }
+
+    const details = document.createElement("details");
+    const summary = textElement(
+        "summary",
+        `${Math.round(percent)}% skill match`,
+    );
+    const list = document.createElement("ul");
+    for (const { name, candidateLevel, requiredLevel, importance } of skills) {
+        const level =
+            candidateLevel === null ? "not listed" : `${candidateLevel}/3`;
+        list.append(
+            textElement(
+                "li",
+                `${name} · Candidate: ${level} · Required: ${requiredLevel}/3 · Importance: ${importance}/3`,
+            ),
+        );
+    }
+    details.append(summary, list);
+    return details;
+}
 
 function renderIncoming(team) {
     const section = document.createElement("section");
@@ -49,6 +73,7 @@ function renderIncoming(team) {
                 textElement("p", application.coverLetter, "project-body"),
             );
         }
+        item.append(renderSkillMatch(application.match));
         if (application.status === "pending") {
             const actions = document.createElement("div");
             actions.className = "project-application-actions";
@@ -99,11 +124,14 @@ async function loadProjects() {
     retry.hidden = true;
     loading.hidden = false;
     const openProjectIds = new Set(
-        Array.from(projects.querySelectorAll("details[open]"), (row) => row.id),
+        Array.from(
+            projects.querySelectorAll(".project-row[open]"),
+            (row) => row.id,
+        ),
     );
     try {
-        const profile = await getProfile();
-        renderProjects(profile.teams, renderIncoming, openProjectIds);
+        const teams = await getMyProjects();
+        renderProjects(teams, renderIncoming, openProjectIds);
     } catch (cause) {
         if (cause.status === 401) {
             window.location.replace("/signin");

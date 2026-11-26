@@ -42,6 +42,7 @@ internal static class RouteMappings
         var teams = new TeamController(repository);
 
         router.Map("GET", "/api/teams/catalog", teams.CatalogAsync, _publicRoles);
+        router.Map("GET", "/api/teams/mine", teams.MyProjectsAsync);
         router.Map("POST", "/api/teams/search", teams.SearchProjectsAsync, _publicRoles);
         router.Map("POST", "/api/teams", teams.CreateAsync);
         router.Map("POST", "/api/teams/{teamId}/applications", teams.ApplyAsync);

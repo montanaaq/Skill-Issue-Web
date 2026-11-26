@@ -1,6 +1,79 @@
 CREATE INDEX IF NOT EXISTS team_positions_open_team_idx ON public.team_positions (team_id)
 WHERE is_open
     AND deleted_at IS NULL;
+CREATE OR REPLACE FUNCTION public.get_my_projects(viewer_id INTEGER) RETURNS JSONB LANGUAGE sql STABLE AS $$
+SELECT COALESCE(
+        jsonb_agg(
+            jsonb_build_object(
+                'id', t.id,
+                'name', t.name,
+                'description', t.description,
+                'role', CASE WHEN t.captain_id = viewer_id THEN 'Captain' ELSE 'Member' END,
+                'status', CASE WHEN t.closed_at IS NULL THEN 'Active' ELSE 'Closed' END,
+                'memberCount', (
+                    SELECT count(*)::INTEGER
+                    FROM public.team_members m
+                    WHERE m.team_id = t.id AND m.left_at IS NULL
+                ),
+                'positions', ARRAY(
+                    SELECT mp.position_title_at_assignment
+                    FROM public.team_member_positions mp
+                    WHERE mp.membership_id = membership.id AND mp.ended_at IS NULL
+                    ORDER BY mp.id
+                ),
+                'incomingApplications', CASE WHEN t.captain_id = viewer_id THEN COALESCE(
+                    (
+                        SELECT jsonb_agg(
+                            jsonb_build_object(
+                                'id', a.id,
+                                'applicantName', u.full_name,
+                                'applicantEmail', u.email,
+                                'position', p.title,
+                                'coverLetter', a.cover_letter,
+                                'status', a.status,
+                                'resolutionReason', a.resolution_reason,
+                                'createdAt', a.created_at,
+                                'canAccept', t.closed_at IS NULL AND p.is_open AND p.deleted_at IS NULL,
+                                'match', jsonb_build_object('skills', COALESCE(
+                                    (
+                                        SELECT jsonb_agg(
+                                            jsonb_build_object(
+                                                'name', s.name,
+                                                'requiredLevel', r.required_level,
+                                                'importance', r.importance,
+                                                'candidateLevel', us.skill_level
+                                            )
+                                            ORDER BY r.importance DESC, s.name, s.id
+                                        )
+                                        FROM public.position_required_skills r
+                                            JOIN public.skills s ON s.id = r.skill_id
+                                            LEFT JOIN public.user_skills us
+                                                ON us.user_id = a.applicant_id AND us.skill_id = r.skill_id
+                                        WHERE r.position_id = p.id
+                                    ),
+                                    '[]'::JSONB
+                                ))
+                            )
+                            ORDER BY (a.status = 'pending') DESC, a.created_at DESC, a.id DESC
+                        )
+                        FROM public.team_positions p
+                            JOIN public.applications a ON a.position_id = p.id
+                            JOIN public.users u ON u.id = a.applicant_id
+                        WHERE p.team_id = t.id
+                    ),
+                    '[]'::JSONB
+                ) END
+            )
+            ORDER BY t.name, t.id
+        ),
+        '[]'::JSONB
+    )
+FROM public.team_members membership
+    JOIN public.teams t ON t.id = membership.team_id
+WHERE membership.user_id = viewer_id
+    AND membership.left_at IS NULL
+    AND t.deleted_at IS NULL;
+$$;
 BEGIN;
 DROP FUNCTION IF EXISTS public.get_team_catalog();
 CREATE FUNCTION public.get_team_catalog() RETURNS TABLE (
@@ -250,7 +323,7 @@ IF EXISTS (
             "categoryId" INTEGER,
             count INTEGER,
             "includeCaptain" BOOLEAN,
-            "skillIds" INTEGER []
+            skills JSONB
         )
     WHERE p.title IS NULL
         OR length(trim(p.title)) NOT BETWEEN 1 AND 120
@@ -263,16 +336,28 @@ IF EXISTS (
             WHERE c.id = p."categoryId"
                 AND c.is_active
         )
-        OR p."skillIds" IS NULL
-        OR cardinality(p."skillIds") NOT BETWEEN 1 AND 20
-        OR (
-            SELECT count(*)
-            FROM public.skills s
-                JOIN public.skill_categories c ON c.id = s.category_id
-            WHERE s.id = ANY(p."skillIds")
+        OR NOT (
+            SELECT count(*) BETWEEN 1 AND 20
+                AND count(*) = count(DISTINCT s.id) FILTER (
+                    WHERE c.id IS NOT NULL
+                        AND required."requiredLevel" BETWEEN 1 AND 3
+                        AND required.importance BETWEEN 1 AND 3
+                )
+            FROM jsonb_to_recordset(
+                    CASE
+                        WHEN jsonb_typeof(p.skills) = 'array' THEN p.skills
+                        ELSE '[]'::JSONB
+                    END
+                ) AS required(
+                    "skillId" INTEGER,
+                    "requiredLevel" SMALLINT,
+                    importance SMALLINT
+                )
+                LEFT JOIN public.skills s ON s.id = required."skillId"
                 AND s.is_active
+                LEFT JOIN public.skill_categories c ON c.id = s.category_id
                 AND c.is_active
-        ) <> cardinality(p."skillIds")
+        )
 )
 OR (
     SELECT sum(p.count) > 20
@@ -295,7 +380,7 @@ FROM jsonb_to_recordset(positions) AS p(
         "categoryId" INTEGER,
         count INTEGER,
         "includeCaptain" BOOLEAN,
-        "skillIds" INTEGER []
+        skills JSONB
     ) LOOP FOR slot IN 1..position.count LOOP
 INSERT INTO public.team_positions (team_id, category_id, title, is_open)
 VALUES (
@@ -308,11 +393,21 @@ VALUES (
         )
     )
 RETURNING id INTO new_position_id;
-INSERT INTO public.position_required_skills (position_id, skill_id, required_level)
+INSERT INTO public.position_required_skills (
+        position_id,
+        skill_id,
+        required_level,
+        importance
+    )
 SELECT new_position_id,
-    skill_id,
-    1
-FROM unnest(position."skillIds") AS selected(skill_id);
+    required."skillId",
+    required."requiredLevel",
+    required.importance
+FROM jsonb_to_recordset(position.skills) AS required(
+        "skillId" INTEGER,
+        "requiredLevel" SMALLINT,
+        importance SMALLINT
+    );
 IF position."includeCaptain"
 AND slot = 1 THEN
 INSERT INTO public.team_member_positions (
@@ -355,8 +450,20 @@ SELECT public.create_team(
                 1,
                 'includeCaptain',
                 false,
-                'skillIds',
-                skill_ids
+                'skills',
+                (
+                    SELECT jsonb_agg(
+                            jsonb_build_object(
+                                'skillId',
+                                skill_id,
+                                'requiredLevel',
+                                1,
+                                'importance',
+                                2
+                            )
+                        )
+                    FROM unnest(skill_ids) AS selected(skill_id)
+                )
             )
         )
     );

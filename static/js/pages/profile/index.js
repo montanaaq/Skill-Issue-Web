@@ -49,16 +49,40 @@ function initProfileSkills(profile, skills) {
     const inactiveNames = profile.skills.filter(
         (name) => !editableNames.has(name),
     );
+    let saved = profile.editableSkills;
+    let levels = new Map(saved.map(({ skillId, skillLevel }) => [skillId, skillLevel]));
+
+    function clearFeedback() {
+        clearError(error);
+        status.textContent = "";
+    }
 
     const picker = createSkillPicker(
         $("profile-skill-picker"),
         skills,
-        () => {
-            clearError(error);
-            status.textContent = "";
+        (ids) => {
+            levels = new Map(ids.map((id) => [id, levels.get(id) ?? 1]));
+            clearFeedback();
         },
         profile.skillIds,
+        ({ id, name }, createSkillSelect) => [
+            createSkillSelect(
+                `profile-skill-${id}-level`,
+                `Level for ${name}`,
+                levels.get(id),
+                (value) => {
+                    levels.set(id, value);
+                    clearFeedback();
+                },
+            ),
+        ],
     );
+
+    $("cancel-skills").addEventListener("click", () => {
+        levels = new Map(saved.map(({ skillId, skillLevel }) => [skillId, skillLevel]));
+        picker.reset([...levels.keys()]);
+        clearFeedback();
+    });
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -67,11 +91,12 @@ function initProfileSkills(profile, skills) {
         }
 
         fields.disabled = true;
-        clearError(error);
-        status.textContent = "";
+        clearFeedback();
         const ids = picker.ids;
+        const selection = ids.map((skillId) => ({ skillId, skillLevel: levels.get(skillId) }));
         try {
-            await saveSkills(ids);
+            await saveSkills(selection);
+            saved = selection;
             renderSkillNames(
                 [...inactiveNames, ...ids.map((id) => byId.get(id))].sort(),
             );

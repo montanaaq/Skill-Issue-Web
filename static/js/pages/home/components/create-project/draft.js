@@ -6,7 +6,7 @@ export const createPosition = () => ({
     categoryId: 0,
     count: 1,
     includeCaptain: false,
-    skillIds: [],
+    skills: [],
 });
 export const totalPlaces = (draft) =>
     draft.positions.reduce((sum, position) => sum + position.count, 0);

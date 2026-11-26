@@ -3,11 +3,13 @@ using Npgsql;
 using NpgsqlTypes;
 using SkillIssue.Models.Requests;
 using SkillIssue.Models.Responses;
+using SkillIssue.Services;
 
 namespace SkillIssue.Repositories;
 
 public interface ITeamRepository
 {
+    Task<List<MyProject>> GetMyProjectsAsync(int userId, CancellationToken cancellationToken);
     Task<TeamCatalog> GetCatalogAsync(CancellationToken cancellationToken);
     Task<List<TeamSearchResult>> SearchAsync(
         int[] skillIds,
@@ -39,6 +41,35 @@ public interface ITeamRepository
 
 public sealed class TeamRepository(NpgsqlDataSource dataSource) : ITeamRepository
 {
+    public async Task<List<MyProject>> GetMyProjectsAsync(
+        int userId,
+        CancellationToken cancellationToken
+    )
+    {
+        await using var command = dataSource.CreateCommand("SELECT public.get_my_projects($1)");
+        command.Parameters.AddWithValue(userId);
+        var projects = await command.ExecuteJsonAsync<List<MyProject>>(cancellationToken);
+
+        foreach (var project in projects)
+        {
+            if (project.IncomingApplications is not { } applications)
+            {
+                continue;
+            }
+
+            for (int index = 0; index < applications.Count; index++)
+            {
+                var application = applications[index];
+                applications[index] = application with
+                {
+                    Match = PositionMatchCalculator.Calculate(application.Match.Skills),
+                };
+            }
+        }
+
+        return projects;
+    }
+
     public async Task<TeamCatalog> GetCatalogAsync(CancellationToken cancellationToken)
     {
         await using var command = dataSource.CreateCommand(

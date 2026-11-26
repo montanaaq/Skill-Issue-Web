@@ -5,6 +5,11 @@ export async function getTeamCatalog() {
     return data;
 }
 
+export async function getMyProjects() {
+    const { data } = await api.get("/teams/mine");
+    return data;
+}
+
 export async function searchProjects(skillIds, before) {
     const { data } = await api.post("/teams/search", { skillIds, before });
     return data;

@@ -1,6 +1,9 @@
 BEGIN;
-INSERT INTO users (email, full_name, password_hash)
-VALUES ('artyom@example.com', 'Артём', 'art123') ON CONFLICT (lower(email)) DO NOTHING;
+INSERT INTO users (email, full_name, password_hash, show_in_recommendations)
+VALUES ('artyom@example.com', 'Артём', 'art123', TRUE)
+ON CONFLICT (lower(email)) DO UPDATE
+SET show_in_recommendations = EXCLUDED.show_in_recommendations
+WHERE NOT users.show_in_recommendations;
 DO $$
 DECLARE captain INTEGER;
 demo RECORD;

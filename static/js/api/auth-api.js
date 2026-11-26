@@ -38,6 +38,6 @@ export function saveSocialLinks(links) {
     return api.post("/user/social-links", links);
 }
 
-export function saveSkills(skillIds) {
-    return api.post("/user/skills", skillIds);
+export function saveSkills(skills) {
+    return api.post("/user/skills", skills);
 }

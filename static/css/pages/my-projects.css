@@ -7,14 +7,14 @@
     overflow-wrap: anywhere;
 }
 
-.project-incoming ul {
+.project-incoming > ul {
     display: grid;
     gap: 1rem;
     padding: 0;
     list-style: none;
 }
 
-.project-incoming li {
+.project-incoming > ul > li {
     padding-block-start: 1rem;
     border-block-start: 1px solid var(--dm-border);
 }

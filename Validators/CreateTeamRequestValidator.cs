@@ -28,12 +28,17 @@ public sealed class CreateTeamRequestValidator : AbstractValidator<CreateTeamReq
                 position.RuleFor(value => value.CategoryId).GreaterThan(0);
                 position.RuleFor(value => value.Count).InclusiveBetween(1, 20);
                 position
-                    .RuleFor(value => value.SkillIds)
+                    .RuleFor(value => value.Skills)
                     .NotEmpty()
-                    .Must(ids =>
-                        ids?.Length <= 20
-                        && ids.All(id => id > 0)
-                        && ids.Distinct().Count() == ids.Length
+                    .Must(skills =>
+                        skills?.Length <= 20
+                        && skills.All(skill =>
+                            skill is not null
+                            && skill.SkillId > 0
+                            && skill.RequiredLevel is >= 1 and <= 3
+                            && skill.Importance is >= 1 and <= 3
+                        )
+                        && skills.Select(skill => skill.SkillId).Distinct().Count() == skills.Length
                     );
             });
     }

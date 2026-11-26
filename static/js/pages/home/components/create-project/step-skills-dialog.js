@@ -38,10 +38,31 @@ export function createSkillsStep(section, draft, catalog) {
                     group,
                     catalog.skills,
                     (ids) => {
-                        position.skillIds = ids;
+                        position.skills = ids.map(
+                            (skillId) =>
+                                position.skills.find((skill) => skill.skillId === skillId)
+                                ?? { skillId, requiredLevel: 1, importance: 2 },
+                        );
                         input.setCustomValidity("");
                     },
-                    position.skillIds,
+                    position.skills.map((skill) => skill.skillId),
+                    ({ id, name }, createSkillSelect) => {
+                        const skill = position.skills.find((skill) => skill.skillId === id);
+                        return [
+                            createSkillSelect(
+                                `${input.id}-${id}-level`,
+                                `Required level for ${name}`,
+                                skill.requiredLevel,
+                                (value) => { skill.requiredLevel = value; },
+                            ),
+                            createSkillSelect(
+                                `${input.id}-${id}-importance`,
+                                `Importance for ${name}`,
+                                skill.importance,
+                                (value) => { skill.importance = value; },
+                            ),
+                        ];
+                    },
                 ),
             );
         });
@@ -51,11 +72,11 @@ export function createSkillsStep(section, draft, catalog) {
         section,
         enter,
         validate() {
-            const inputs = [...skillGroups.querySelectorAll("input")];
+            const inputs = [...skillGroups.querySelectorAll('input[type="search"]')];
 
             for (const [index, input] of inputs.entries()) {
                 input.setCustomValidity(
-                    draft.positions[index].skillIds.length
+                    draft.positions[index].skills.length
                         ? ""
                         : "Choose at least one required skill.",
                 );

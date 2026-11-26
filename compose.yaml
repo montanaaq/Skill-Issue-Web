@@ -1,4 +1,4 @@
-name: devmate
+name: skill_issue
 
 services:
   postgres:
@@ -20,3 +20,4 @@ services:
 
 volumes:
   postgres_data:
+z

@@ -1,16 +1,19 @@
 using FluentValidation;
+using SkillIssue.Models.Requests;
 
 namespace SkillIssue.Validators;
 
-public sealed class UpdateSkillsRequestValidator : AbstractValidator<int[]>
+public sealed class UpdateSkillsRequestValidator : AbstractValidator<UpdateSkillRequest[]>
 {
     public UpdateSkillsRequestValidator()
     {
-        RuleFor(skillIds => skillIds)
-            .Must(skillIds =>
-                skillIds.Length <= 20
-                && skillIds.All(id => id > 0)
-                && skillIds.Distinct().Count() == skillIds.Length
+        RuleFor(skills => skills)
+            .Must(skills =>
+                skills.Length <= 20
+                && skills.All(skill =>
+                    skill is not null && skill.SkillId > 0 && skill.SkillLevel is >= 1 and <= 3
+                )
+                && skills.Select(skill => skill.SkillId).Distinct().Count() == skills.Length
             );
     }
 }

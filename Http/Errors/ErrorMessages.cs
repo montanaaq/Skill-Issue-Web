@@ -17,4 +17,5 @@ public static class ErrorMessages
     public const string EmailAlreadyExists = "This email is already registered.";
     public const string ApplicationUnavailable = "You cannot apply for this position.";
     public const string ApplicationAlreadyResolved = "This application can no longer be processed.";
+    public const string MissingDatabaseJson = "The database query did not return a JSON value.";
 }

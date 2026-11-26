@@ -20,7 +20,11 @@ public interface IUserRepository
     Task<User?> FindByIdAsync(int userId, CancellationToken cancellationToken);
 
     Task<JsonElement> GetProfileAsync(int userId, CancellationToken cancellationToken);
-    Task<bool> SaveSkillsAsync(int userId, int[] skillIds, CancellationToken cancellationToken);
+    Task<bool> SaveSkillsAsync(
+        int userId,
+        UpdateSkillRequest[] skills,
+        CancellationToken cancellationToken
+    );
     Task SaveSocialLinksAsync(
         int userId,
         UpdateSocialLinksRequest request,
@@ -34,13 +38,12 @@ public sealed class UserRepository(NpgsqlDataSource dataSource) : IUserRepositor
     {
         await using var command = dataSource.CreateCommand("SELECT public.get_user_profile($1)");
         command.Parameters.AddWithValue(userId);
-        string json = (string)(await command.ExecuteScalarAsync(cancellationToken))!;
-        return JsonSerializer.Deserialize<JsonElement>(json);
+        return await command.ExecuteJsonAsync<JsonElement>(cancellationToken);
     }
 
     public async Task<bool> SaveSkillsAsync(
         int userId,
-        int[] skillIds,
+        UpdateSkillRequest[] skills,
         CancellationToken cancellationToken
     )
     {
@@ -48,7 +51,10 @@ public sealed class UserRepository(NpgsqlDataSource dataSource) : IUserRepositor
             "CALL public.save_user_skills($1, $2, NULL)"
         );
         command.Parameters.AddWithValue(userId);
-        command.Parameters.AddWithValue(skillIds);
+        command.Parameters.AddWithValue(
+            NpgsqlDbType.Jsonb,
+            JsonSerializer.Serialize(skills, JsonSerializerOptions.Web)
+        );
 
         return (bool)(await command.ExecuteScalarAsync(cancellationToken))!;
     }
@@ -132,7 +138,7 @@ public sealed class UserRepository(NpgsqlDataSource dataSource) : IUserRepositor
             FullName = reader.GetString(reader.GetOrdinal("full_name")),
             PasswordHash = reader.GetString(reader.GetOrdinal("password_hash")),
             Role = Enum.Parse<UserRole>(reader.GetString(reader.GetOrdinal("role")), true),
-            ProfilePrivate = reader.GetBoolean(reader.GetOrdinal("profile_private")),
+            ShowInRecommendations = reader.GetBoolean(reader.GetOrdinal("show_in_recommendations")),
             CreatedAt = reader.GetDateTime(reader.GetOrdinal("created_at")),
             UpdatedAt = reader.GetDateTime(reader.GetOrdinal("updated_at")),
         };

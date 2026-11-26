@@ -25,7 +25,7 @@ CREATE OR REPLACE FUNCTION public.get_user_profile(profile_user_id INTEGER) RETU
 DECLARE social_links JSONB;
 user_skills TEXT [];
 active_skill_ids INTEGER [];
-user_projects JSONB;
+editable_skills JSONB;
 user_applications JSONB;
 BEGIN
 SELECT jsonb_agg(
@@ -42,87 +42,20 @@ SELECT array_agg(
         s.id
         ORDER BY s.name
     ) FILTER (
-        WHERE s.is_active
+        WHERE s.is_active AND c.is_active
+    ),
+    jsonb_agg(
+        jsonb_build_object('skillId', s.id, 'skillLevel', us.skill_level)
+        ORDER BY s.name
+    ) FILTER (
+        WHERE s.is_active AND c.is_active
     ) INTO user_skills,
-    active_skill_ids
+    active_skill_ids,
+    editable_skills
 FROM public.user_skills us
     JOIN public.skills s ON s.id = us.skill_id
+    JOIN public.skill_categories c ON c.id = s.category_id
 WHERE us.user_id = profile_user_id;
-WITH projects AS (
-    SELECT t.id,
-        t.name,
-        t.description,
-        CASE
-            WHEN t.captain_id = profile_user_id THEN 'Captain'
-            ELSE 'Member'
-        END AS role,
-        CASE
-            WHEN t.closed_at IS NULL THEN 'Active'
-            ELSE 'Closed'
-        END AS status,
-        (
-            SELECT count(*)
-            FROM public.team_members m
-            WHERE m.team_id = t.id
-                AND m.left_at IS NULL
-        ) AS "memberCount",
-        ARRAY(
-            SELECT mp.position_title_at_assignment
-            FROM public.team_member_positions mp
-            WHERE mp.membership_id = membership.id
-                AND mp.ended_at IS NULL
-            ORDER BY mp.id
-        ) AS positions,
-        CASE
-            WHEN t.captain_id = profile_user_id THEN COALESCE(
-                (
-                    SELECT jsonb_agg(
-                            jsonb_build_object(
-                                'id',
-                                a.id,
-                                'applicantName',
-                                applicant.full_name,
-                                'applicantEmail',
-                                applicant.email,
-                                'position',
-                                p.title,
-                                'coverLetter',
-                                a.cover_letter,
-                                'status',
-                                a.status,
-                                'resolutionReason',
-                                a.resolution_reason,
-                                'createdAt',
-                                a.created_at,
-                                'canAccept',
-                                t.closed_at IS NULL
-                                AND p.is_open
-                                AND p.deleted_at IS NULL
-                            )
-                            ORDER BY (a.status = 'pending') DESC,
-                                a.created_at DESC,
-                                a.id DESC
-                        )
-                    FROM public.team_positions p
-                        JOIN public.applications a ON a.position_id = p.id
-                        JOIN public.users applicant ON applicant.id = a.applicant_id
-                    WHERE p.team_id = t.id
-                ),
-                '[]'::JSONB
-            )
-        END AS "incomingApplications"
-    FROM public.team_members membership
-        JOIN public.teams t ON t.id = membership.team_id
-    WHERE membership.user_id = profile_user_id
-        AND membership.left_at IS NULL
-        AND t.deleted_at IS NULL
-)
-SELECT jsonb_agg(
-        to_jsonb(projects)
-        ORDER BY name,
-            id
-    ) INTO user_projects
-FROM projects;
 WITH sent_applications AS (
     SELECT a.id,
         t.name AS "teamName",
@@ -150,8 +83,8 @@ RETURN jsonb_build_object(
     COALESCE(user_skills, ARRAY []::TEXT []),
     'skillIds',
     COALESCE(active_skill_ids, ARRAY []::INTEGER []),
-    'teams',
-    COALESCE(user_projects, '[]'::JSONB),
+    'editableSkills',
+    COALESCE(editable_skills, '[]'::JSONB),
     'applications',
     COALESCE(user_applications, '[]'::JSONB)
 );

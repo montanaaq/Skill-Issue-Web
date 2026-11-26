@@ -11,7 +11,7 @@ public sealed class User
     [JsonIgnore]
     public string PasswordHash { get; init; } = string.Empty;
     public UserRole Role { get; init; } = UserRole.User;
-    public bool ProfilePrivate { get; init; } = true;
+    public bool ShowInRecommendations { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
 }

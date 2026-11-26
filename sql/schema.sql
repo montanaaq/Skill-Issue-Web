@@ -19,7 +19,7 @@ CREATE TABLE users (
     full_name VARCHAR(200) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role VARCHAR(16) NOT NULL DEFAULT 'user',
-    profile_private BOOLEAN NOT NULL DEFAULT TRUE,
+    show_in_recommendations BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CHECK (role IN ('user', 'admin')),

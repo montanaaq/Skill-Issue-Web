@@ -1,14 +1,27 @@
 import { MAX_SKILLS } from "./constants/limits.js";
 
-export function createSkillPicker(root, skills, onChange, initialIds = []) {
+export function createSkillPicker(root, skills, onChange, initialIds = [], renderFields) {
     const input = root.querySelector("input");
     const suggestions = root.querySelector(".skill-suggestions");
     const selectedList = root.querySelector(".selected-skills");
     const status = root.querySelector("[data-skill-status]");
+    const selectTemplate = root.querySelector("[data-skill-select-template]");
     const byId = new Map(skills.map((skill) => [skill.id, skill]));
     const controller = new AbortController();
     const { signal } = controller;
     const selected = new Set(initialIds.filter((id) => byId.has(id)));
+
+    function createSkillSelect(id, labelText, value, onValueChange) {
+        const label = selectTemplate.content.firstElementChild.cloneNode(true);
+        const select = label.querySelector("select");
+        label.htmlFor = id;
+        label.querySelector("span").textContent = labelText;
+        select.id = id;
+        select.name = id;
+        select.value = String(value);
+        select.addEventListener("change", () => onValueChange(Number(select.value)));
+        return label;
+    }
 
     function createBadge(skill, isSelected) {
         const item = document.createElement("li");
@@ -24,6 +37,13 @@ export function createSkillPicker(root, skills, onChange, initialIds = []) {
         marker.textContent = isSelected ? " ×" : " +";
         button.append(marker);
         item.append(button);
+        if (isSelected && renderFields) {
+            const fields = document.createElement("div");
+            fields.className = "skill-fields";
+            fields.append(...renderFields(skill, createSkillSelect));
+            item.className = "skill-with-fields";
+            item.append(fields);
+        }
         return item;
     }
 
@@ -92,6 +112,7 @@ export function createSkillPicker(root, skills, onChange, initialIds = []) {
                 input.value = "";
             }
 
+            onChange([...selected]);
             renderSelection();
             const next = (removed ? selectedList : suggestions).querySelector(
                 "button",
@@ -99,7 +120,6 @@ export function createSkillPicker(root, skills, onChange, initialIds = []) {
             (next ?? selectedList.querySelector("button") ?? input).focus({
                 preventScroll: true,
             });
-            onChange([...selected]);
         },
         { signal },
     );
@@ -130,16 +150,28 @@ export function createSkillPicker(root, skills, onChange, initialIds = []) {
 
     renderSelection();
 
+    function reset(ids) {
+        selected.clear();
+        for (const id of ids) {
+            if (byId.has(id)) {
+                selected.add(id);
+            }
+        }
+
+        input.value = "";
+        input.setCustomValidity("");
+        renderSelection();
+    }
+
     return {
         get ids() {
             return [...selected];
         },
         clear() {
-            selected.clear();
-            input.value = "";
-            renderSelection();
+            reset([]);
             return onChange([]);
         },
+        reset,
         destroy() {
             controller.abort();
         },

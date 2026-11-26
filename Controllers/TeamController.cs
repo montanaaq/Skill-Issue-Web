@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using FluentValidation;
 using SkillIssue.Http;
 using SkillIssue.Http.Errors;
@@ -14,6 +15,13 @@ public sealed class TeamController(ITeamRepository repository)
     private const int PageSize = 12;
     private readonly CreateTeamRequestValidator _validator = new();
     private readonly CreateApplicationRequestValidator _applicationValidator = new();
+
+    public async Task MyProjectsAsync(RequestContext context)
+    {
+        var user = context.User ?? throw new HttpException(ApiError.Unauthorized);
+        var projects = await repository.GetMyProjectsAsync(user.Id, context.CancellationToken);
+        await context.WriteJsonAsync(JsonSerializer.SerializeToElement(projects, JsonSerializerOptions.Web));
+    }
 
     public async Task CatalogAsync(RequestContext context)
     {

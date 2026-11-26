@@ -38,12 +38,12 @@ public sealed class UserController(IAuthService authService, IUserRepository rep
     public async Task SaveSkillsAsync(RequestContext context)
     {
         var user = context.User ?? throw new HttpException(ApiError.Unauthorized);
-        int[] skillIds = await context.ReadJsonAsync<int[]>();
-        var validation = await _skillsValidator.ValidateAsync(skillIds, context.CancellationToken);
+        var skills = await context.ReadJsonAsync<UpdateSkillRequest[]>();
+        var validation = await _skillsValidator.ValidateAsync(skills, context.CancellationToken);
 
         if (
             !validation.IsValid
-            || !await repository.SaveSkillsAsync(user.Id, skillIds, context.CancellationToken)
+            || !await repository.SaveSkillsAsync(user.Id, skills, context.CancellationToken)
         )
         {
             throw new HttpException(ApiError.BadRequest, ErrorMessages.InvalidSkills);
